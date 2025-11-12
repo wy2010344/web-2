@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'yarn'
+          #cache: 'yarn'
 
       # ---------- 2. 解析 config.json ----------
       - name: 读取配置
@@ -37,9 +37,8 @@ jobs:
       # ---------- 4. 安装依赖 & 上游包 ----------
       - name: 安装
         run: |
-          yarn install
           for lib in $(echo '${{ steps.cfg.outputs.deps }}' | jq -r '.[]'); do
-            yarn add "./${lib}.tgz" --no-cache
+            yarn add "./${lib}.tgz"
           done
 
       # ---------- 5. 构建 ----------
