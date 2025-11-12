@@ -37,9 +37,9 @@ jobs:
       # ---------- 4. 安装依赖 & 上游包 ----------
       - name: 安装
         run: |
-          yarn install --frozen-lockfile
+          yarn install
           for lib in $(echo '${{ steps.cfg.outputs.deps }}' | jq -r '.[]'); do
-            yarn add "./${lib}.tgz"
+            yarn add "./${lib}.tgz" --no-cache
           done
 
       # ---------- 5. 构建 ----------
