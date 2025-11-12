@@ -1,0 +1,56 @@
+name: deploy
+
+on:
+  push:
+    branches: [main, dev, test]   # 只在这三个环境分支触发
+  repository_dispatch:   # ← 监听分发事件
+    types: [lib-update] 
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read        # 拉代码
+      deployments: write    # 写 Cloudflare Pages
+    steps:
+      # ---------- 1. 基础准备 ----------
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+
+      # ---------- 2. 解析 config.json ----------
+      - name: 读取配置
+        id: cfg
+        run: |
+          echo "deps=$(jq -c '.dependencies' .github/config.json)" >> $GITHUB_OUTPUT
+          echo "target=$(jq -r ".target.${{ github.ref_name }}" .github/config.json)" >> $GITHUB_OUTPUT
+
+      # ---------- 3. 批量下载同分支上游包 ----------
+      - name: 下载上游 tgz
+        run: |
+          for lib in $(echo '${{ steps.cfg.outputs.deps }}' | jq -r '.[]'); do
+            URL="https://github.com/wy2010344/${lib}/releases/download/${{ github.ref_name }}/${lib}.tgz"
+            curl -L -o "${lib}.tgz" "$URL"
+          done
+
+      # ---------- 4. 安装依赖 & 上游包 ----------
+      - name: 安装
+        run: |
+          yarn install --frozen-lockfile
+          for lib in $(echo '${{ steps.cfg.outputs.deps }}' | jq -r '.[]'); do
+            yarn add "./${lib}.tgz"
+          done
+
+      # ---------- 5. 构建 ----------
+      - name: 构建
+        run: yarn build
+
+      # ---------- 6. 部署到 Cloudflare Pages ----------
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: pages deploy dist --project-name ${{ steps.cfg.outputs.target }}

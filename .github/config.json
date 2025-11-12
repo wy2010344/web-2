@@ -1,0 +1,11 @@
+{
+  "dependencies": [
+    "share-lib",
+    "share-ts-lib"
+  ],
+  "target": {
+    "main": "main-web-2",
+    "dev": "dev-web-2",
+    "test": "test-web-2"
+  }
+}
