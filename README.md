@@ -1,0 +1,3 @@
+由于需要部署到cloudflare，需要在项目的配置里添加上cloudflare的
+CF_API_TOKEN
+CF_ACCOUNT_ID
